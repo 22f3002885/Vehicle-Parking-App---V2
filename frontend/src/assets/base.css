@@ -1,0 +1,53 @@
+.heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+h1, h2 {
+    margin-top: 64px;
+    text-align: center;
+}
+
+.navbar-links {
+    display: flex;
+    gap: 2rem;
+}
+
+.form {
+    margin-top: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+form{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#option {
+    margin-left: 10px;
+    margin-right: 10px;
+    width: 25%;
+}
+
+#search {
+    margin-left: 10px;
+    margin-right: 10px;
+    width: 40%;
+}
+
+.search-button {
+    margin-left: 10px;
+    margin-right: 10px;
+    width: 15%;
+}
+
+.clear-button {
+    margin-left: 10px;
+    margin-right: 10px;
+    width: 15%;
+}

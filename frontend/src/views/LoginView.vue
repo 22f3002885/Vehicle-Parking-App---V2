@@ -1,5 +1,6 @@
 <template>
   <div class="container mt-4">
+    <home-navbar />
     <h2>Login</h2>
     <form @submit.prevent="handleLogin">
       <div class="mb-3">
@@ -17,10 +18,12 @@
 </template>
 
 <script>
+import HomeNavbar from '@/components/HomeNavbar.vue';
 import api from '../api/axios'  // your preconfigured Axios instance
 
 export default {
   name: 'LoginView',
+  components: { HomeNavbar },
   data() {
     return {
       email: '',
@@ -45,9 +48,9 @@ export default {
         localStorage.setItem('user_roles', JSON.stringify(roles))
 
         if (roles.includes('admin')) {
-          this.$router.push('/admin-dashboard')
+          this.$router.push('/admin/dashboard')
         } else {
-          this.$router.push('/user-dashboard')
+          this.$router.push('/user/dashboard')
         }
       } catch (err) {
         this.error = err.response?.data?.message || 'Login failed'

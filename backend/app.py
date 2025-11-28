@@ -45,5 +45,23 @@ api.add_resource(LoginAPI, '/api/login')
 api.add_resource(LogoutAPI, '/api/logout')
 api.add_resource(RegisterAPI, '/api/register')
 
+from routes.admin_apis import AdminLotsAPI, AdminLotDetailAPI, AdminSpotDetailAPI, AdminUsersAPI, AdminReservationsAPI, AdminSummaryAPI
+
+api.add_resource(AdminLotsAPI, '/api/admin/lots')
+api.add_resource(AdminLotDetailAPI, '/api/admin/lots/<int:lot_id>')
+api.add_resource(AdminSpotDetailAPI, '/api/admin/spots/<int:spot_id>')
+api.add_resource(AdminUsersAPI, '/api/admin/users')
+api.add_resource(AdminReservationsAPI, '/api/admin/reservations')
+api.add_resource(AdminSummaryAPI, '/api/admin/summary')
+
+from routes.user_apis import CurrentUserReservationsAPI, UserParkinglotsAPI, UserHistoryAPI, UserReserveSpotAPI, UserReleaseSpotAPI, UserSummaryAPI
+
+api.add_resource(CurrentUserReservationsAPI, '/api/user/dashboard')
+api.add_resource(UserParkinglotsAPI, '/api/user/parkinglots')
+api.add_resource(UserHistoryAPI, '/api/user/history')
+api.add_resource(UserReserveSpotAPI, '/api/user/reserve/<int:lot_id>')
+api.add_resource(UserReleaseSpotAPI, '/api/user/release/<int:reservation_id>')
+api.add_resource(UserSummaryAPI, '/api/user/summary')
+
 if __name__ == "__main__":
     app.run(debug=True)

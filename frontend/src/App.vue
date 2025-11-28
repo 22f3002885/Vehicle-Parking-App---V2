@@ -1,15 +1,15 @@
 <template>
-  <div id="app" class="container mt-3">
-    <router-view />
+  <div id="app">
+    <main class="main-content">
+      <div class="container-fluid px-4 py-4">
+        <router-view />
+      </div>
+    </main>
   </div>
 </template>
 
 <script>
 export default {
-  name: 'App',
+  name: 'App'
 }
 </script>
-
-<style>
-/* global styles if needed */
-</style>

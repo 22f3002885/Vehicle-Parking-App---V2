@@ -1,5 +1,6 @@
 <template>
   <div class="container mt-4">
+    <home-navbar />
     <h2>Register</h2>
     <form @submit.prevent="handleRegister">
       <div class="mb-3">
@@ -19,9 +20,11 @@
 
 <script>
 import api from '../api/axios'
+import HomeNavbar from '@/components/HomeNavbar.vue';
 
 export default {
   name: 'RegisterView',
+  components: { HomeNavbar },
   data() {
     return {
       email: '',

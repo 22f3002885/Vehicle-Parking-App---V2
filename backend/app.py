@@ -55,14 +55,15 @@ api.add_resource(AdminReservationsAPI, '/api/admin/reservations')
 api.add_resource(AdminSummaryRevenueAPI, '/api/admin/summary/revenue')
 api.add_resource(AdminSummarySpotsAPI, '/api/admin/summary/spots')
 
-from routes.user_apis import CurrentUserReservationsAPI, UserParkinglotsAPI, UserHistoryAPI, UserReserveSpotAPI, UserReleaseSpotAPI, UserSummaryAPI
+from routes.user_apis import CurrentUserReservationsAPI, UserParkinglotsListAPI,UserParkinglotDetailAPI, UserHistoryAPI, UserReserveSpotAPI, UserReleaseSpotAPI, UserSpotStatusSummaryAPI
 
 api.add_resource(CurrentUserReservationsAPI, '/api/user/dashboard')
-api.add_resource(UserParkinglotsAPI, '/api/user/parkinglots')
+api.add_resource(UserParkinglotsListAPI, '/api/user/parkinglots')
+api.add_resource(UserParkinglotDetailAPI, '/api/user/parkinglots/<int:lot_id>')
 api.add_resource(UserHistoryAPI, '/api/user/history')
 api.add_resource(UserReserveSpotAPI, '/api/user/reserve/<int:lot_id>')
 api.add_resource(UserReleaseSpotAPI, '/api/user/release/<int:reservation_id>')
-api.add_resource(UserSummaryAPI, '/api/user/summary')
+api.add_resource(UserSpotStatusSummaryAPI, '/api/user/summary_spot_status')
 
 if __name__ == "__main__":
     app.run(debug=True)

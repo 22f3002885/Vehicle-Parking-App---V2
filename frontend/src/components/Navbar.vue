@@ -46,11 +46,6 @@
               </router-link>
             </li>
             <li class="nav-item">
-              <router-link class="nav-link" :class="{ active: $route.path === '/user/bookings' }" to="/user/bookings">
-                <i class="fas fa-receipt me-1"></i>My Bookings
-              </router-link>
-            </li>
-            <li class="nav-item">
               <router-link class="nav-link" :class="{ active: $route.path === '/user/history' }" to="/user/history">
                 <i class="fas fa-history me-1"></i>History
               </router-link>

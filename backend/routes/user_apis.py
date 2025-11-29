@@ -25,7 +25,7 @@ class CurrentUserReservationsAPI(Resource):
         
         return make_response(jsonify({'active_reservations': result}), 200)
 
-class UserParkinglotsAPI(Resource):
+class UserParkinglotsListAPI(Resource):
     @roles_required('user')
     def get(self):
         lots = ParkingLot.query.all()
@@ -40,6 +40,24 @@ class UserParkinglotsAPI(Resource):
                 'available_spots': available_spots
             })
         return make_response(jsonify({'parking_lots': result}), 200)
+
+class UserParkinglotDetailAPI(Resource):
+    @roles_required('user')
+    def get(self, lot_id):
+        lot = ParkingLot.query.get(lot_id)
+        if not lot:
+            return make_response(jsonify({'message': 'Parking lot not found.'}), 404)
+        
+        available_spots = ParkingSpot.query.filter_by(lot_id=lot.id, status='A').count()
+        lot_info = {
+            'lot_id': lot.id,
+            'name': lot.name,
+            'address': lot.address,
+            'price_per_hour': lot.price_per_hour,
+            'available_spots': available_spots
+        }
+        return make_response(jsonify({'lot': lot_info}), 200)
+
     
 class UserHistoryAPI(Resource):
     @roles_required('user')
@@ -127,18 +145,10 @@ class UserReleaseSpotAPI(Resource):
             }
         }
         return make_response(jsonify(response), 200)
-    
-class UserSummaryAPI(Resource):
+
+class UserSpotStatusSummaryAPI(Resource):
     @roles_required('user')
     def get(self):
-        user_id = current_user.id
-        total_reservations = Reservation.query.filter_by(user_id=user_id).count()
-        active_reservations = Reservation.query.filter_by(user_id=user_id, exit_time=None).count()
-        past_reservations = total_reservations - active_reservations
-
-        response = {
-            'total_reservations': total_reservations,
-            'active_reservations': active_reservations,
-            'past_reservations': past_reservations
-        }
-        return make_response(jsonify(response), 200)
+        released_count = ParkingSpot.query.filter_by(status='A').count()
+        occupied_count = ParkingSpot.query.filter_by(status='O').count()
+        return make_response(jsonify({'released': released_count, 'occupied': occupied_count}), 200)

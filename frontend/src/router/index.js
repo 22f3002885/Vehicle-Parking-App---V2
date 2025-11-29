@@ -4,7 +4,8 @@ import RegisterView from '../views/RegisterView.vue'
 
 import UserDashboard from '../views/UserDashBoard.vue'
 import UserLotsView from '../views/UserLotsView.vue'
-import UserBookings from '../views/UserBookings.vue'
+import UserBookSpot from '../views/UserBookSpot.vue'
+import UserReleaseConfirm from '@/views/UserReleaseConfirm.vue'
 import UserHistory from '../views/UserHistory.vue'
 import UserSummary from '../views/UserSummary.vue'
 
@@ -23,7 +24,8 @@ const routes = [
   { path: '/register', component: RegisterView },
   { path: '/user/dashboard', component: UserDashboard },
   { path: '/user/lots', component: UserLotsView },
-  { path: '/user/bookings', component: UserBookings },
+  { path: '/user/lots/:lot_id/book', component: UserBookSpot },
+  { path: '/user/reservations/:reservation_id/release', component: UserReleaseConfirm },
   { path: '/user/history', component: UserHistory },
   { path: '/user/summary', component: UserSummary },
   { path: '/admin/dashboard', component: AdminDashboard },

@@ -45,14 +45,15 @@ api.add_resource(LoginAPI, '/api/login')
 api.add_resource(LogoutAPI, '/api/logout')
 api.add_resource(RegisterAPI, '/api/register')
 
-from routes.admin_apis import AdminLotsAPI, AdminLotDetailAPI, AdminSpotDetailAPI, AdminUsersAPI, AdminReservationsAPI, AdminSummaryAPI
+from routes.admin_apis import AdminLotsAPI, AdminLotDetailAPI, AdminSpotDetailAPI, AdminUsersAPI, AdminReservationsAPI, AdminSummaryRevenueAPI, AdminSummarySpotsAPI
 
 api.add_resource(AdminLotsAPI, '/api/admin/lots')
 api.add_resource(AdminLotDetailAPI, '/api/admin/lots/<int:lot_id>')
 api.add_resource(AdminSpotDetailAPI, '/api/admin/spots/<int:spot_id>')
 api.add_resource(AdminUsersAPI, '/api/admin/users')
 api.add_resource(AdminReservationsAPI, '/api/admin/reservations')
-api.add_resource(AdminSummaryAPI, '/api/admin/summary')
+api.add_resource(AdminSummaryRevenueAPI, '/api/admin/summary/revenue')
+api.add_resource(AdminSummarySpotsAPI, '/api/admin/summary/spots')
 
 from routes.user_apis import CurrentUserReservationsAPI, UserParkinglotsAPI, UserHistoryAPI, UserReserveSpotAPI, UserReleaseSpotAPI, UserSummaryAPI
 

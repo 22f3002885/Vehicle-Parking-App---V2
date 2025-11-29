@@ -2,7 +2,7 @@ from flask_restful import Resource, reqparse
 from flask_security import roles_required
 from flask import jsonify, make_response, request
 from models import db, ParkingLot, ParkingSpot, Reservation, User
-from sqlalchemy import func
+from sqlalchemy import case, func
 
 lot_parser = reqparse.RequestParser()
 lot_parser.add_argument('name', type=str, required=True)
@@ -114,15 +114,22 @@ class AdminLotDetailAPI(Resource):
     
     @roles_required('admin')
     def get(self, lot_id):
-        lot = ParkingLot.query.get(lot_id)
+        lot = ParkingLot.query.get_or_404(lot_id)
         spots = ParkingSpot.query.filter_by(lot_id=lot_id).all()
-        response = {
-            "spots": [
+        return make_response(jsonify({
+            "lot": {  # ✅ ADD LOT DETAILS
+                "id": lot.id,
+                "name": lot.name,
+                "price_per_hour": float(lot.price_per_hour),
+                "address": lot.address,
+                "pincode": lot.pincode,
+                "max_spots": lot.max_spots
+            },
+            "spots": [  # ✅ Keep spots too
                 {"id": s.id, "status": s.status}
                 for s in spots
             ]
-        }
-        return make_response(jsonify(response), 200)
+        }), 200)
     
 class AdminSpotDetailAPI(Resource):
     @roles_required('admin')
@@ -162,8 +169,12 @@ class AdminUsersAPI(Resource):
     @roles_required('admin')
     def get(self):
         users = User.query.all()
+        non_admin_users = [
+            user for user in users 
+            if not any(role.name == 'admin' for role in user.roles)
+        ]
         result = []
-        for user in users:
+        for user in non_admin_users:
             result.append({
                 'id': user.id,
                 'email': user.email,
@@ -190,18 +201,54 @@ class AdminReservationsAPI(Resource):
             })
         return make_response(jsonify(result), 200)
     
-class AdminSummaryAPI(Resource):
+class AdminSummaryRevenueAPI(Resource):
     @roles_required('admin')
     def get(self):
-        total_lots = ParkingLot.query.count()
-        total_spots = ParkingSpot.query.count()
-        occupied_spots = ParkingSpot.query.filter_by(status='O').count()
-        total_users = User.query.count()
+        revenue_data = (
+            db.session.query(
+                ParkingLot.id,
+                ParkingLot.name,
+                func.coalesce(func.sum(Reservation.total_cost), 0).label('total_revenue')
+            )
+            .outerjoin(ParkingLot.spots)
+            .outerjoin(ParkingSpot.reservations)
+            .group_by(ParkingLot.id, ParkingLot.name)
+            .all()
+        )
+        
+        result = []
+        for lot_id, name, total_revenue in revenue_data:
+            result.append({
+                'id': lot_id,
+                'name': name,
+                'total_revenue': float(total_revenue)
+            })
+        return make_response(jsonify(result), 200)
 
-        summary = {
-            'total_lots': total_lots,
-            'total_spots': total_spots,
-            'occupied_spots': occupied_spots,
-            'total_users': total_users
-        }
-        return make_response(jsonify(summary), 200)
+class AdminSummarySpotsAPI(Resource):
+    @roles_required('admin')
+    def get(self):
+        spot_data = (
+            db.session.query(
+                ParkingLot.id,
+                ParkingLot.name,
+                func.count(ParkingSpot.id).label('total_spots'),
+                func.sum(case((ParkingSpot.status == 'A', 1), else_=0)).label('available_spots'),
+                func.sum(case((ParkingSpot.status == 'O', 1), else_=0)).label('occupied_spots')
+            )
+            .join(ParkingLot.spots)
+            .group_by(ParkingLot.id, ParkingLot.name)
+            .all()
+        )
+        
+        result = []
+        for lot_id, name, total_spots, available_spots, occupied_spots in spot_data:
+            result.append({
+                'id': lot_id,
+                'name': name,
+                'total_spots': int(total_spots),
+                'available_spots': int(available_spots),
+                'occupied_spots': int(occupied_spots)
+            })
+        return make_response(jsonify(result), 200)
+

@@ -12,6 +12,10 @@ import AdminDashboard from '../views/AdminDashBoard.vue'
 import AdminUsers from '../views/AdminUsers.vue'
 import AdminReservations from '../views/AdminReservations.vue'
 import AdminSummary from '../views/AdminSummary.vue'
+import CreateLotView from '../views/AdminCreateLotView.vue'
+import EditLotView from '../views/AdminEditLotView.vue'
+import AdminLotSpots from '../views/AdminLotSpots.vue'
+import AdminSpotDetail from '@/views/AdminSpotDetails.vue'
 
 const routes = [
   { path: '/', redirect: '/login' },
@@ -26,6 +30,10 @@ const routes = [
   { path: '/admin/users', component: AdminUsers },
   { path: '/admin/reservations', component: AdminReservations },
   { path: '/admin/summary', component: AdminSummary },
+  { path: '/admin/create-lot', component: CreateLotView },
+  { path: '/admin/edit-lot/:lotId', component: EditLotView },
+  { path: '/admin/lots/:lotId/spots', component: AdminLotSpots },
+  { path: '/admin/lots/:lotId/spots/:spotId', component: AdminSpotDetail }
 ]
 
 const router = createRouter({

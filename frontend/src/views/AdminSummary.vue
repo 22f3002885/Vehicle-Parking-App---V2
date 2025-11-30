@@ -19,7 +19,8 @@
             </div>
             <div class="card-body p-0">
               <div class="chart-container">
-                <canvas ref="revenueChart"></canvas>
+                <canvas ref="revenueChart" v-if="revenueData.length > 0"></canvas>
+                <div v-else class="p-4">Loading chart...</div>
               </div>
             </div>
           </div>
@@ -37,7 +38,8 @@
             </div>
             <div class="card-body p-0">
               <div class="chart-container">
-                <canvas ref="spotAvailabilityChart"></canvas>
+                <canvas ref="spotAvailabilityChart" v-if="spotData.length > 0"></canvas>
+                <div v-else class="p-4">Loading chart...</div>
               </div>
             </div>
           </div>
@@ -68,15 +70,19 @@ export default {
     await this.fetchSummaryData()
   },
   watch: {
-    // ✅ Render charts ONLY when data is available
     revenueData(newVal) {
-      if (newVal.length > 0 && this.$refs.revenueChart) {
-        this.renderRevenueChart()
+      if (newVal.length > 0) {
+        // Use nextTick to ensure DOM is updated before rendering chart
+        this.$nextTick(() => {
+          this.renderRevenueChart()
+        })
       }
     },
     spotData(newVal) {
-      if (newVal.length > 0 && this.$refs.spotAvailabilityChart) {
-        this.renderSpotChart()
+      if (newVal.length > 0) {
+        this.$nextTick(() => {
+          this.renderSpotChart()
+        })
       }
     }
   },
@@ -94,17 +100,17 @@ export default {
     async fetchSummaryData() {
       this.loading = true
       try {
-        console.log('Fetching summary data...') // DEBUG
+        console.log('Fetching summary data...')
         const [revenueRes, spotRes] = await Promise.all([
           api.get('/api/admin/summary/revenue'),
           api.get('/api/admin/summary/spots')
         ])
         
-        console.log('Revenue data:', revenueRes.data) // DEBUG
-        console.log('Spot data:', spotRes.data) // DEBUG
+        console.log('Revenue data:', revenueRes.data)
+        console.log('Spot data:', spotRes.data)
         
-        this.revenueData = revenueRes.data
-        this.spotData = spotRes.data
+        this.revenueData = revenueRes.data || []
+        this.spotData = spotRes.data || []
         
       } catch (error) {
         console.error('Failed to fetch summary data:', error)
@@ -115,122 +121,142 @@ export default {
     },
     
     renderRevenueChart() {
+      // Safety check: ensure canvas ref exists
+      if (!this.$refs.revenueChart) {
+        console.warn('Revenue chart ref not found')
+        return
+      }
+
       // Destroy existing chart if it exists
       if (this.revenueChart) {
         this.revenueChart.destroy()
       }
       
-      const revenueCtx = this.$refs.revenueChart.getContext('2d')
-      this.revenueChart = new Chart(revenueCtx, {
-        type: 'bar',
-        data: {
-          labels: this.revenueData.map(item => item.name),
-          datasets: [{
-            label: 'Revenue (₹)',
-            data: this.revenueData.map(item => item.total_revenue),
-            backgroundColor: 'rgba(54, 162, 235, 0.7)',
-            borderColor: 'rgba(54, 162, 235, 1)',
-            borderWidth: 2,
-            borderRadius: 8,
-            borderSkipped: false
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          animation: true,
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                callback: function(value) {
-                  return '₹' + Math.round(value).toLocaleString()
+      try {
+        const revenueCtx = this.$refs.revenueChart.getContext('2d')
+        this.revenueChart = new Chart(revenueCtx, {
+          type: 'bar',
+          data: {
+            labels: this.revenueData.map(item => item.name),
+            datasets: [{
+              label: 'Revenue (₹)',
+              data: this.revenueData.map(item => item.total_revenue),
+              backgroundColor: 'rgba(54, 162, 235, 0.7)',
+              borderColor: 'rgba(54, 162, 235, 1)',
+              borderWidth: 2,
+              borderRadius: 8,
+              borderSkipped: false
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: true,
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  callback: function(value) {
+                    return '₹' + Math.round(value).toLocaleString()
+                  }
+                },
+                grid: {
+                  color: 'rgba(0,0,0,0.1)'
                 }
               },
-              grid: {
-                color: 'rgba(0,0,0,0.1)'
+              x: {
+                grid: {
+                  display: false
+                }
               }
             },
-            x: {
-              grid: {
-                display: false
+            plugins: {
+              legend: {
+                display: true,
+                position: 'top'
               }
             }
-          },
-          plugins: {
-            legend: {
-              display: true,
-              position: 'top'
-            }
           }
-        }
-      })
+        })
+      } catch (error) {
+        console.error('Error rendering revenue chart:', error)
+      }
     },
 
     renderSpotChart() {
+      // Safety check: ensure canvas ref exists
+      if (!this.$refs.spotAvailabilityChart) {
+        console.warn('Spot chart ref not found')
+        return
+      }
+
       // Destroy existing chart if it exists
       if (this.spotChart) {
         this.spotChart.destroy()
       }
       
-      const spotCtx = this.$refs.spotAvailabilityChart.getContext('2d')
-      this.spotChart = new Chart(spotCtx, {
-        type: 'bar',
-        data: {
-          labels: this.spotData.map(item => item.name),
-          datasets: [
-            {
-              label: 'Available',
-              data: this.spotData.map(item => item.available_spots),
-              backgroundColor: 'rgba(75, 192, 192, 0.8)',
-              borderColor: 'rgba(75, 192, 192, 1)',
-              borderWidth: 2,
-              borderRadius: 8,
-              borderSkipped: false
-            },
-            {
-              label: 'Occupied',
-              data: this.spotData.map(item => item.occupied_spots),
-              backgroundColor: 'rgba(255, 99, 132, 0.8)',
-              borderColor: 'rgba(255, 99, 132, 1)',
-              borderWidth: 2,
-              borderRadius: 8,
-              borderSkipped: false
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          animation: true,
-          scales: {
-            x: {
-              stacked: true,
-              grid: {
-                display: false
+      try {
+        const spotCtx = this.$refs.spotAvailabilityChart.getContext('2d')
+        this.spotChart = new Chart(spotCtx, {
+          type: 'bar',
+          data: {
+            labels: this.spotData.map(item => item.name),
+            datasets: [
+              {
+                label: 'Available',
+                data: this.spotData.map(item => item.available_spots),
+                backgroundColor: 'rgba(75, 192, 192, 0.8)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 2,
+                borderRadius: 8,
+                borderSkipped: false
+              },
+              {
+                label: 'Occupied',
+                data: this.spotData.map(item => item.occupied_spots),
+                backgroundColor: 'rgba(255, 99, 132, 0.8)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 2,
+                borderRadius: 8,
+                borderSkipped: false
               }
-            },
-            y: {
-              stacked: true,
-              beginAtZero: true,
-              ticks: {
-                callback: function(value) {
-                  return value
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: true,
+            scales: {
+              x: {
+                stacked: true,
+                grid: {
+                  display: false
                 }
               },
-              grid: {
-                color: 'rgba(0,0,0,0.1)'
+              y: {
+                stacked: true,
+                beginAtZero: true,
+                ticks: {
+                  callback: function(value) {
+                    return value
+                  }
+                },
+                grid: {
+                  color: 'rgba(0,0,0,0.1)'
+                }
+              }
+            },
+            plugins: {
+              legend: {
+                display: true,
+                position: 'top'
               }
             }
-          },
-          plugins: {
-            legend: {
-              display: true,
-              position: 'top'
-            }
           }
-        }
-      })
+        })
+      } catch (error) {
+        console.error('Error rendering spot chart:', error)
+      }
     }
   }
 }

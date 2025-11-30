@@ -3,6 +3,7 @@ from flask_security import roles_required
 from flask import jsonify, make_response, request
 from models import db, ParkingLot, ParkingSpot, Reservation, User
 from sqlalchemy import case, func
+from cache import cache  # Import from cache.py instead of app.py
 
 lot_parser = reqparse.RequestParser()
 lot_parser.add_argument('name', type=str, required=True)
@@ -11,23 +12,31 @@ lot_parser.add_argument('address', type=str, required=True)
 lot_parser.add_argument('pincode', type=str, required=True)
 lot_parser.add_argument('max_spots', type=int, required=True)
 
+
 class AdminLotsAPI(Resource):
     @roles_required('admin')
     def get(self):
-        lots = ParkingLot.query.all()
-        result = []
-        for lot in lots:
-            total_spots = len(lot.spots)
-            occupied_spots = sum(1 for s in lot.spots if s.status == 'O')
-            result.append({
-                'id': lot.id,
-                'name': lot.name,
-                'price_per_hour': lot.price_per_hour,
-                'address': lot.address,
-                'pincode': lot.pincode,
-                'max_spots': lot.max_spots
-            })
-        return make_response(jsonify(result), 200)
+        # Cache parking lots
+        lots = cache.get('parking_lots_all')
+        
+        if lots is None:
+            lots = ParkingLot.query.all()
+            result = []
+            for lot in lots:
+                total_spots = len(lot.spots)
+                occupied_spots = sum(1 for s in lot.spots if s.status == 'O')
+                result.append({
+                    'id': lot.id,
+                    'name': lot.name,
+                    'price_per_hour': lot.price_per_hour,
+                    'address': lot.address,
+                    'pincode': lot.pincode,
+                    'max_spots': lot.max_spots
+                })
+            cache.set('parking_lots_all', result, timeout=600)
+            lots = result
+        
+        return make_response(jsonify(lots), 200)
     
     @roles_required('admin')
     def post(self):
@@ -56,8 +65,11 @@ class AdminLotsAPI(Resource):
         
         db.session.commit()
 
+        # Invalidate cache
+        cache.delete('parking_lots_all')
+
         response = {
-            'message': 'Parking lot created successfully.',
+            'message': 'Parking lot created successfully!',
             'lot_details': {
                 'id': new_lot.id,
                 'name': new_lot.name,
@@ -84,6 +96,10 @@ class AdminLotDetailAPI(Resource):
         db.session.delete(lot)
         db.session.commit()
 
+        # Invalidate cache
+        cache.delete('parking_lots_all')
+        cache.delete(f'parking_lot_{lot_id}')
+
         return make_response(jsonify({'message': 'Parking lot deleted successfully.'}), 200)
     
     @roles_required('admin')
@@ -99,6 +115,11 @@ class AdminLotDetailAPI(Resource):
         lot.pincode = args['pincode']
         
         db.session.commit()
+
+        # Invalidate cache
+        cache.delete('parking_lots_all')
+        cache.delete(f'parking_lot_{lot_id}')
+
         response = {
             'message': 'Parking lot updated successfully.',
             'lot_details': {
@@ -114,22 +135,31 @@ class AdminLotDetailAPI(Resource):
     
     @roles_required('admin')
     def get(self, lot_id):
-        lot = ParkingLot.query.get_or_404(lot_id)
-        spots = ParkingSpot.query.filter_by(lot_id=lot_id).all()
-        return make_response(jsonify({
-            "lot": {  # ✅ ADD LOT DETAILS
-                "id": lot.id,
-                "name": lot.name,
-                "price_per_hour": float(lot.price_per_hour),
-                "address": lot.address,
-                "pincode": lot.pincode,
-                "max_spots": lot.max_spots
-            },
-            "spots": [  # ✅ Keep spots too
-                {"id": s.id, "status": s.status}
-                for s in spots
-            ]
-        }), 200)
+        # Cache individual lot
+        cache_key = f'parking_lot_{lot_id}'
+        lot_data = cache.get(cache_key)
+        
+        if lot_data is None:
+            lot = ParkingLot.query.get_or_404(lot_id)
+            spots = ParkingSpot.query.filter_by(lot_id=lot_id).all()
+            lot_data = {
+                "lot": {
+                    "id": lot.id,
+                    "name": lot.name,
+                    "price_per_hour": float(lot.price_per_hour),
+                    "address": lot.address,
+                    "pincode": lot.pincode,
+                    "max_spots": lot.max_spots
+                },
+                "spots": [
+                    {"id": s.id, "status": s.status}
+                    for s in spots
+                ]
+            }
+            cache.set(cache_key, lot_data, timeout=600)
+        
+        return make_response(jsonify(lot_data), 200)
+
     
 class AdminSpotDetailAPI(Resource):
     @roles_required('admin')
@@ -163,7 +193,12 @@ class AdminSpotDetailAPI(Resource):
         lot.max_spots -= 1
         db.session.commit()
 
+        # Invalidate parking lot cache
+        cache.delete('parking_lots_all')
+        cache.delete(f'parking_lot_{lot.id}')
+
         return make_response(jsonify({'message': 'Parking spot deleted successfully.'}), 200)
+
     
 class AdminUsersAPI(Resource):
     @roles_required('admin')
@@ -181,6 +216,7 @@ class AdminUsersAPI(Resource):
                 'roles': [role.name for role in user.roles]
             })
         return make_response(jsonify(result), 200)
+
     
 class AdminReservationsAPI(Resource):
     @roles_required('admin')
@@ -200,6 +236,7 @@ class AdminReservationsAPI(Resource):
                 'user_id': res.user_id
             })
         return make_response(jsonify(result), 200)
+
     
 class AdminSummaryRevenueAPI(Resource):
     @roles_required('admin')
@@ -224,6 +261,7 @@ class AdminSummaryRevenueAPI(Resource):
                 'total_revenue': float(total_revenue)
             })
         return make_response(jsonify(result), 200)
+
 
 class AdminSummarySpotsAPI(Resource):
     @roles_required('admin')
@@ -251,4 +289,3 @@ class AdminSummarySpotsAPI(Resource):
                 'occupied_spots': int(occupied_spots)
             })
         return make_response(jsonify(result), 200)
-

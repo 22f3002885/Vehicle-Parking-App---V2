@@ -4,6 +4,7 @@ from flask_security import roles_required, current_user
 from models import db, ParkingLot, ParkingSpot, Reservation
 from sqlalchemy import func, desc
 from datetime import datetime, timedelta
+from cache import cache
 
 class CurrentUserReservationsAPI(Resource):
     @roles_required('user')

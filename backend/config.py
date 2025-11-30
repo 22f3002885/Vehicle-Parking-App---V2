@@ -16,5 +16,5 @@ class Config:
 
     CACHE_TYPE = 'RedisCache'
     CACHE_REDIS_URL = 'redis://localhost:6379/1'  # Separate from Celery (db 0)
-    CACHE_DEFAULT_TIMEOUT = 300  # 5 minutes
-    CACHE_KEY_PREFIX = 'parkease:'  # Prefix for cache keys
+    CACHE_DEFAULT_TIMEOUT = 300  
+    CACHE_KEY_PREFIX = 'parkease:'  
